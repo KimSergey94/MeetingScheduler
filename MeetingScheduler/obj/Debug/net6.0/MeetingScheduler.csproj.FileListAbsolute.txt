@@ -1,0 +1,15 @@
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\bin\Debug\net6.0\MeetingScheduler.exe
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\bin\Debug\net6.0\MeetingScheduler.deps.json
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\bin\Debug\net6.0\MeetingScheduler.runtimeconfig.json
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\bin\Debug\net6.0\MeetingScheduler.dll
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\bin\Debug\net6.0\MeetingScheduler.pdb
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\MeetingScheduler.csproj.AssemblyReference.cache
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\MeetingScheduler.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\MeetingScheduler.AssemblyInfoInputs.cache
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\MeetingScheduler.AssemblyInfo.cs
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\MeetingScheduler.csproj.CoreCompileInputs.cache
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\MeetingScheduler.dll
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\refint\MeetingScheduler.dll
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\MeetingScheduler.pdb
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\MeetingScheduler.genruntimeconfig.cache
+C:\Users\sksss\source\repos\MeetingScheduler\MeetingScheduler\obj\Debug\net6.0\ref\MeetingScheduler.dll
