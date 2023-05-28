@@ -29,8 +29,7 @@ namespace MeetingScheduler.Helpers
             if (input == "1")
                 PrintSchedulerMenu(DateTime.Now);
             else if (input == "2")
-            {
-            }
+                ShowParticularDayMeetings();
             else if (input == "3")
                 Environment.Exit(0);
             else
@@ -40,6 +39,38 @@ namespace MeetingScheduler.Helpers
                 Console.WriteLine();
                 PrintMainMenu();
             }
+        }
+        private static void ShowParticularDayMeetings()
+        {
+            Console.WriteLine("Пожалуйста введите день за который хотите посмотреть встречи. Формат: 27.05.2023");
+            var meetingsDateString = GetUserInput();
+            try
+            {
+                var meetingsDateTime = meetingsDateString.TryParseToDate();
+                var filteredMeetings = MeetingManager.GetMeetingsByDate(meetingsDateTime);
+                filteredMeetings.ForEach(meeting => {
+                    PrintMeetingDetails(meeting);
+                });
+                Console.ReadKey();
+                Console.WriteLine();
+                AskToExitOrMainMenu();
+            }
+            catch
+            {
+                Console.WriteLine("Неправильный формат даты.");
+                Console.ReadKey();
+                Console.WriteLine();
+                ShowParticularDayMeetings();
+            }
+        }
+        private static void PrintMeetingDetails(Meeting meeting)
+        {
+            Console.WriteLine("*******************************");
+            Console.WriteLine($"Встреча #{meeting.Id}. {meeting.Name}");
+            Console.WriteLine($"Время начала: {meeting.StartDate.ParseToString()}");
+            Console.WriteLine($"Примерно время окончания: {meeting.EndDate.ParseToString()}");
+            if(meeting.ReminderMinutes > 0) Console.WriteLine($"Напоминание за {meeting.ReminderMinutes} минут");
+            Console.WriteLine("*******************************");
         }
         private static void PrintSchedulerMenu(DateTime date)
         {
@@ -118,8 +149,8 @@ namespace MeetingScheduler.Helpers
             var endDateTimeString = GetUserInput();
             try
             {
-                var endDateTtime = endDateTimeString.TryParseToDateTime();
-                return endDateTtime;
+                var endDateTime = endDateTimeString.TryParseToDateTime();
+                return endDateTime;
             }
             catch
             {
@@ -243,6 +274,10 @@ namespace MeetingScheduler.Helpers
         {
             CultureInfo provider = CultureInfo.InvariantCulture;
             return DateTime.ParseExact(dateTime, "dd.MM.yyyy H:mm", provider);
+        }
+        public static string ParseToString(this DateTime dateTime)
+        {
+            return dateTime.ToString("dd.MM.yyyy H:mm");
         }
     }
 }

@@ -52,5 +52,10 @@ namespace MeetingScheduler.Services
             }
             return result;
         }
+
+        public static List<Meeting> GetMeetingsByDate(DateTime meetingsDate)
+        {
+            return meetings.Where(x => x.StartDate.Date == meetingsDate.Date).ToList();
+        }
     }
 }
