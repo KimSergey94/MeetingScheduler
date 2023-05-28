@@ -93,21 +93,37 @@ namespace MeetingScheduler.Helpers
             PrintMeetingDetails(meeting);
             Console.WriteLine("Пожалуйста выберите нужную опцию:");
             Console.WriteLine("[1] Редактировать название встречи");
-            Console.WriteLine("[2] Редактировать дату начала встречи");
-            Console.WriteLine("[3] Редактировать примерную дату окончания встречи");
-            Console.WriteLine("[4] Редактировать за сколько минут до встречи отправить напоминание о встрече");
-            Console.WriteLine("[5] Удалить встречу");
+            Console.WriteLine("[2] Редактировать дату начала и окончания встречи");
+            Console.WriteLine("[3] Редактировать за сколько минут до встречи отправить напоминание о встрече");
+            Console.WriteLine("[4] Удалить встречу");
+            Console.WriteLine("[5] Вернуться в главное меню");
             var input = GetUserInput();
 
             if (input == "1") HandleMeetingNameChange(meeting);
-            else if (input == "2") HandleMeetingDateChange(meeting, MeetingDateChangeOptionEnum.StartDate);
-            else if (input == "3") HandleMeetingDateChange(meeting, MeetingDateChangeOptionEnum.EndDate);
-            else if (input == "4") HandleMeetingReminderChange(meeting);
-            else if (input == "5")
+            else if (input == "2")
+            {
+                var meetingCopy = meeting.CreateDeepCopy();
+                HandleMeetingDateChange(meeting, MeetingDateChangeOptionEnum.StartDate);
+                HandleMeetingDateChange(meeting, MeetingDateChangeOptionEnum.EndDate);
+                if (MeetingManager.DoesMeetingFitSchedule(meeting))
+                {
+                    ShowMessage($"Время встречи не пересекается с другими встречами и было успешно сохранено.");
+                    ShowMeetingEditingOptions(meeting);
+                }
+                else
+                {
+                    meeting = meetingCopy;
+                    ShowMessage($"Произошла ошибка. Время встречи пересекается с другой/другими встречами. Произведен откат изменений дат начала и окончания встречи. Попробуйте еще раз.");
+                    ShowMeetingEditingOptions(meeting);
+                }
+            }
+            else if (input == "3") HandleMeetingReminderChange(meeting);
+            else if (input == "4")
             {
                 if (MeetingManager.RemoveMeeting(meeting) > 0) ShowMessageAndAskToExitOrMainMenu("Встреча успешно удалена.");
                 else ShowMessageAndAskToExitOrMainMenu($"Произошла ошибка. Не удалось удалить встречу с номером {meeting.Id}. Проверьте правильность данных.");
             }
+            else if (input == "5") PrintMainMenu();
             else
             {
                 ShowMessage($"Произошла ошибка. Опция '{input}' не валидна.");
@@ -122,8 +138,19 @@ namespace MeetingScheduler.Helpers
             try
             {
                 var reminderMinutes = int.Parse(input);
-                meeting.ReminderMinutes = reminderMinutes;
-                ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
+
+                if(meeting.StartDate.AddMinutes(Math.Abs(reminderMinutes)) >= DateTime.Now.AddMinutes(1))
+                {
+                    meeting.ReminderMinutes = reminderMinutes;
+                    ShowMessage("Дата напоминания успешно отредактирована.");
+                    ShowMeetingEditingOptions(meeting);
+                }
+                else
+                {
+                    ShowMessage("Дата напоминания должна быть позже текущего времени системы минимум на одну минуту.");
+                    HandleMeetingReminderChange(meeting);
+                }
+                
             }
             catch
             {
@@ -140,10 +167,29 @@ namespace MeetingScheduler.Helpers
             {
                 var dateTime = dateString.TryParseToDateTime();
                 if(meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate)
-                    meeting.StartDate = dateTime;
+                {
+                    if(dateTime >= DateTime.Now.AddMinutes(10)) meeting.StartDate = dateTime;
+                    else
+                    {
+                        ShowMessage("Дата начала встречи должна быть позже текущего времени системы минимум на 10 минут.");
+                        HandleMeetingDateChange(meeting, meetingDateChangeOptionEnum);
+                        return;
+                    }
+                }
                 else if (meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.EndDate)
-                    meeting.EndDate = dateTime;
-                ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
+                {
+                    if (dateTime >= meeting.StartDate.AddMinutes(1)) meeting.EndDate = dateTime;
+                    else
+                    {
+                        ShowMessage("Примерная дата окончания встречи должна быть позже даты начала встречи минимум на одну минуту.");
+                        HandleMeetingDateChange(meeting, meetingDateChangeOptionEnum);
+                        return;
+                    }
+                }
+                var messageChangeDateTitle = "";
+                if (meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate) messageChangeDateTitle = "Дата начала";
+                else if(meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.EndDate) messageChangeDateTitle = "Примерная дата окончания";
+                ShowMessage($"{messageChangeDateTitle} встречи успешно отредактирована.");
             }
             catch
             {
@@ -157,7 +203,9 @@ namespace MeetingScheduler.Helpers
             var input = GetUserInput();
             meeting.Name = input;
 
-            ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
+            ShowMessage("Название встречи успешно отредактировано.");
+            ShowMeetingEditingOptions(meeting);
+                
             //if (MeetingManager.EditMeeting(meeting) > 0)
             //{
             //    ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
@@ -169,12 +217,7 @@ namespace MeetingScheduler.Helpers
         }
         private static void PrintMeetingDetails(Meeting meeting)
         {
-            Console.WriteLine("*********************************************");
-            Console.WriteLine($"Встреча #{meeting.Id}. {meeting.Name}");
-            Console.WriteLine($"Время начала: {meeting.StartDate.ParseToString()}");
-            Console.WriteLine($"Примерно время окончания: {meeting.EndDate.ParseToString()}");
-            if (meeting.ReminderMinutes > 0) Console.WriteLine($"Напоминание за {meeting.ReminderMinutes} минут");
-            Console.WriteLine("*********************************************");
+            Console.WriteLine(meeting.ToString());
         }
         private static void PrintSchedulerMenu(DateTime date)
         {
@@ -194,15 +237,23 @@ namespace MeetingScheduler.Helpers
         }
         private static void StartMeetingCreation(DateTime startDate)
         {
-            var name = AskMeetingName();
             startDate = InitMeetingDateAndTime(startDate);
             var endDate = InitMeetingEndDateAndTime();
-            var reminderMinutes = AskToSetReminder();
-            if (reminderMinutes > 0) Console.WriteLine("Reminder is created succsueussuffultlltlyy");
-
-            var newMeeting = new Meeting(name, startDate, endDate, reminderMinutes);
-            MeetingManager.AddMeeting(newMeeting);
-            ShowMessageAndAskToExitOrMainMenu("Встреча успешно создана.");
+            var newMeeting = new Meeting("temp", startDate, endDate, 0);
+            if (MeetingManager.DoesMeetingFitSchedule(newMeeting))
+            {
+                var name = AskMeetingName();
+                var reminderMinutes = AskToSetReminder();
+                newMeeting.ReminderMinutes = reminderMinutes;
+                newMeeting.Name = name;
+                MeetingManager.AddMeeting(newMeeting);
+                ShowMessageAndAskToExitOrMainMenu("Встреча успешно создана.");
+            }
+            else
+            {
+                ShowMessage($"Произошла ошибка. Время встречи пересекается с другой/другими встречами. Попробуйте еще раз.");
+                StartMeetingCreation(startDate);
+            }
         }
         private static void AskToExitOrMainMenu()
         {

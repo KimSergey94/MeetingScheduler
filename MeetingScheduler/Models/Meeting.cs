@@ -1,13 +1,16 @@
-﻿using MeetingScheduler.Services;
+﻿using MeetingScheduler.Interfaces;
+using MeetingScheduler.Services;
+using MeetingScheduler.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace MeetingScheduler.Models
 {
-    internal class Meeting
+    internal class Meeting : IPrototype<Meeting>
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -30,6 +33,23 @@ namespace MeetingScheduler.Models
         public bool DoesFitSchedule()
         {
             return MeetingManager.DoesMeetingFitSchedule(this);
+        }
+
+        public Meeting CreateDeepCopy()
+        {
+            var meeting = (Meeting)MemberwiseClone();
+            return meeting;
+        }
+
+        public override string ToString()
+        {
+            var result = $"*********************************************\n" +
+                $"Встреча #{Id}. {Name}\n" +
+                $"Время начала: {StartDate.ParseToString()}\n" +
+                $"Примерно время окончания: {EndDate.ParseToString()}\n";
+            if (ReminderMinutes > 0) result += $"Напоминание за {ReminderMinutes} минут\n";
+            result += "*********************************************\n";
+            return result;
         }
     }
 }
