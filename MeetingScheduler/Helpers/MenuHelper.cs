@@ -9,6 +9,11 @@ namespace MeetingScheduler.Helpers
 {
     internal static class MenuHelper
     {
+        public static void StartMenu()
+        {
+            PrintGreeting();
+            PrintMainMenu();
+        }
         public static void PrintGreeting()
         {
             Console.WriteLine("Добро пожаловать.");
