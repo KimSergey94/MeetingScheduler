@@ -24,19 +24,13 @@ namespace MeetingScheduler.Helpers
         {
             PrintMainMenuOptions();
             var input = GetUserInput();
-            Console.WriteLine();
 
-            if (input == "1")
-                PrintSchedulerMenu(DateTime.Now);
-            else if (input == "2")
-                ShowParticularDayMeetings();
-            else if (input == "3")
-                Environment.Exit(0);
+            if (input == "1") PrintSchedulerMenu(DateTime.Now);
+            else if (input == "2") ShowParticularDayMeetings();
+            else if (input == "3") Environment.Exit(0);
             else
             {
-                Console.WriteLine($"Произошла ошибка. Опция '{input}' не валидна.");
-                Console.ReadKey();
-                Console.WriteLine();
+                ShowMessage($"Произошла ошибка. Опция '{input}' не валидна.");
                 PrintMainMenu();
             }
         }
@@ -51,43 +45,150 @@ namespace MeetingScheduler.Helpers
                 filteredMeetings.ForEach(meeting => {
                     PrintMeetingDetails(meeting);
                 });
-                Console.ReadKey();
                 Console.WriteLine();
-                AskToExitOrMainMenu();
+                AskIfChangesNeeded();
             }
             catch
             {
-                Console.WriteLine("Неправильный формат даты.");
-                Console.ReadKey();
-                Console.WriteLine();
+                ShowMessage("Неправильный формат даты.");
                 ShowParticularDayMeetings();
             }
         }
+        private static void AskIfChangesNeeded()
+        {
+            Console.WriteLine("Введите номер встречи если требуется внести изменения или удалить встречу. Введите 0 чтобы вернуться в главное меню.");
+            var input = GetUserInput();
+            if (input == "0") PrintMainMenu();
+            try
+            {
+                var meetingNumber = int.Parse(input);
+                if (meetingNumber > 0)
+                {
+                    try
+                    {
+                        StartMeetingEditing(meetingNumber);
+                    }
+                    catch
+                    {
+                        ShowMessage($"Произошла ошибка. Не удалось редактировать встречу с номером '{meetingNumber}'. Проверьте правильность данных.");
+                        AskIfChangesNeeded();
+                    }
+                }
+                else PrintMainMenu();
+            }
+            catch 
+            {
+                ShowMessage($"Произошла ошибка. Опция '{input}' не валидна.");
+                AskIfChangesNeeded();
+            }
+        }
+        private static void StartMeetingEditing(int meetingNumber)
+        {
+            var meeting = MeetingManager.GetMeetingById(meetingNumber);
+            if (meeting != null) ShowMeetingEditingOptions(meeting);
+            else throw new Exception($"не найдена встреча с номером {meetingNumber}");
+        }
+        private static void ShowMeetingEditingOptions(Meeting meeting)
+        {
+            PrintMeetingDetails(meeting);
+            Console.WriteLine("Пожалуйста выберите нужную опцию:");
+            Console.WriteLine("[1] Редактировать название встречи");
+            Console.WriteLine("[2] Редактировать дату начала встречи");
+            Console.WriteLine("[3] Редактировать примерную дату окончания встречи");
+            Console.WriteLine("[4] Редактировать за сколько минут до встречи отправить напоминание о встрече");
+            Console.WriteLine("[5] Удалить встречу");
+            var input = GetUserInput();
+
+            if (input == "1") HandleMeetingNameChange(meeting);
+            else if (input == "2") HandleMeetingDateChange(meeting, MeetingDateChangeOptionEnum.StartDate);
+            else if (input == "3") HandleMeetingDateChange(meeting, MeetingDateChangeOptionEnum.EndDate);
+            else if (input == "4") HandleMeetingReminderChange(meeting);
+            else if (input == "5")
+            {
+                if (MeetingManager.RemoveMeeting(meeting) > 0) ShowMessageAndAskToExitOrMainMenu("Встреча успешно удалена.");
+                else ShowMessageAndAskToExitOrMainMenu($"Произошла ошибка. Не удалось удалить встречу с номером {meeting.Id}. Проверьте правильность данных.");
+            }
+            else
+            {
+                ShowMessage($"Произошла ошибка. Опция '{input}' не валидна.");
+                ShowMeetingEditingOptions(meeting);
+            }
+        }
+        private static void HandleMeetingReminderChange(Meeting meeting)
+        {
+            Console.WriteLine("Пожалуйста введите за сколько минут до встречи нужно отправить напоминание:");
+            var input = GetUserInput();
+
+            try
+            {
+                var reminderMinutes = int.Parse(input);
+                meeting.ReminderMinutes = reminderMinutes;
+                ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
+            }
+            catch
+            {
+                ShowMessage("Неправильный формат ввода.");
+                HandleMeetingReminderChange( meeting);
+            }
+        }
+        private static void HandleMeetingDateChange(Meeting meeting, MeetingDateChangeOptionEnum meetingDateChangeOptionEnum)
+        {
+            var meetingChangeDateTitle = meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate ? "дату начала" : meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.EndDate ? "примерную дату окончания" : "";
+            Console.WriteLine($"Пожалуйста введите новую {meetingChangeDateTitle} встречи. Формат: 27.05.2023 13:12");
+            var dateString = GetUserInput();
+            try
+            {
+                var dateTime = dateString.TryParseToDateTime();
+                if(meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate)
+                    meeting.StartDate = dateTime;
+                else if (meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.EndDate)
+                    meeting.EndDate = dateTime;
+                ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
+            }
+            catch
+            {
+                ShowMessage("Неправильный формат даты.");
+                HandleMeetingDateChange(meeting, meetingDateChangeOptionEnum);
+            }
+        }
+        private static void HandleMeetingNameChange(Meeting meeting)
+        {
+            Console.WriteLine("Пожалуйста введите новое название:");
+            var input = GetUserInput();
+            meeting.Name = input;
+
+            ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
+            //if (MeetingManager.EditMeeting(meeting) > 0)
+            //{
+            //    ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
+            //}
+            //else
+            //{
+            //    ShowMessageAndAskToExitOrMainMenu($"Произошла непредвиденная ошибка. Не удалось отредактирова встречу под номером {meeting.Id}.");
+            //}
+        }
         private static void PrintMeetingDetails(Meeting meeting)
         {
-            Console.WriteLine("*******************************");
+            Console.WriteLine("*********************************************");
             Console.WriteLine($"Встреча #{meeting.Id}. {meeting.Name}");
             Console.WriteLine($"Время начала: {meeting.StartDate.ParseToString()}");
             Console.WriteLine($"Примерно время окончания: {meeting.EndDate.ParseToString()}");
-            if(meeting.ReminderMinutes > 0) Console.WriteLine($"Напоминание за {meeting.ReminderMinutes} минут");
-            Console.WriteLine("*******************************");
+            if (meeting.ReminderMinutes > 0) Console.WriteLine($"Напоминание за {meeting.ReminderMinutes} минут");
+            Console.WriteLine("*********************************************");
         }
         private static void PrintSchedulerMenu(DateTime date)
         {
             PrintSchedulerMenuOptions(date);
             var input = GetUserInput();
-            Console.WriteLine();
 
             if (input == "1") StartMeetingCreation(date);
-            else if (input == "2") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.DayOfMonth));
-            else if (input == "3") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.Month));
-            else if (input == "4") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.Year));
+            else if (input == "2") PrintSchedulerMenu(ChangeSchedulerDate(date, DatePartEnum.DayOfMonth));
+            else if (input == "3") PrintSchedulerMenu(ChangeSchedulerDate(date, DatePartEnum.Month));
+            else if (input == "4") PrintSchedulerMenu(ChangeSchedulerDate(date, DatePartEnum.Year));
             else if (input == "5") PrintMainMenu();
             else
             {
-                Console.WriteLine($"Произошла ошибка. Опция '{input}' не валидна.");
-                Console.ReadKey();
-                Console.WriteLine();
+                ShowMessage($"Произошла ошибка. Опция '{input}' не валидна.");
                 PrintSchedulerMenu(date);
             }
         }
@@ -101,11 +202,7 @@ namespace MeetingScheduler.Helpers
 
             var newMeeting = new Meeting(name, startDate, endDate, reminderMinutes);
             MeetingManager.AddMeeting(newMeeting);
-            Console.WriteLine("Встреча успешно создана.");
-            Console.ReadKey();
-            Console.WriteLine();
-
-            AskToExitOrMainMenu();
+            ShowMessageAndAskToExitOrMainMenu("Встреча успешно создана.");
         }
         private static void AskToExitOrMainMenu()
         {
@@ -113,17 +210,27 @@ namespace MeetingScheduler.Helpers
             Console.WriteLine("[1] Вернуться в главное меню");
             Console.WriteLine("[2] Выход");
             var input = GetUserInput();
-            Console.WriteLine();
+            
 
             if (input == "1") PrintMainMenu();
             else if (input == "2") Environment.Exit(0);
             else
             {
-                Console.WriteLine($"Произошла ошибка. Опция '{input}' не валидна.");
-                Console.ReadKey();
-                Console.WriteLine();
-                AskToExitOrMainMenu();
+                ShowMessageAndAskToExitOrMainMenu($"Произошла ошибка. Опция '{input}' не валидна.");
             }
+        }
+        private static void ShowMessageAndAskToExitOrMainMenu(string message)
+        {
+            Console.WriteLine(message);
+            Console.ReadKey();
+            Console.WriteLine();
+            AskToExitOrMainMenu();
+        }
+        private static void ShowMessage(string message)
+        {
+            Console.WriteLine(message);
+            Console.ReadKey();
+            Console.WriteLine();
         }
         private static int AskToSetReminder()
         {
@@ -137,7 +244,7 @@ namespace MeetingScheduler.Helpers
             }
             catch
             {
-                Console.WriteLine("Неправильный формат даты.");
+                Console.WriteLine("Неправильный формат ввода.");
                 Console.WriteLine();
                 result = AskToSetReminder();
             }
@@ -184,9 +291,10 @@ namespace MeetingScheduler.Helpers
         public static string GetUserInput()
         {
             var input = Console.ReadLine();
+            Console.WriteLine();
             return input.TrimConsoleInput();
         }
-        private static DateTime ChangeSchedulerDate(DateTime date, DateChangeOptionEnum dateChangeOption)
+        private static DateTime ChangeSchedulerDate(DateTime date, DatePartEnum dateChangeOption)
         {
             Console.WriteLine("Пожалуйста введите нужное значение:");
             var input = GetUserInput().AdjustDateInputFormat(dateChangeOption);
@@ -196,11 +304,11 @@ namespace MeetingScheduler.Helpers
                 var dateString = date.ToString("dd.MM.yyyy");
                 var dateArray = dateString.Split('.');
 
-                if (dateChangeOption == DateChangeOptionEnum.DayOfMonth)
+                if (dateChangeOption == DatePartEnum.DayOfMonth)
                     dateArray[0] = input;
-                else if (dateChangeOption == DateChangeOptionEnum.Month)
+                else if (dateChangeOption == DatePartEnum.Month)
                     dateArray[1] = input;
-                else if (dateChangeOption == DateChangeOptionEnum.Year)
+                else if (dateChangeOption == DatePartEnum.Year)
                     dateArray[2] = input;
 
                 dateString = string.Join('.', dateArray);
@@ -233,16 +341,20 @@ namespace MeetingScheduler.Helpers
         }
     }
 
-    public enum DateChangeOptionEnum
+    public enum DatePartEnum
     {
         DayOfMonth = 0, Month = 1, Year = 2,
+    }
+    public enum MeetingDateChangeOptionEnum
+    {
+        StartDate = 0, EndDate = 1,
     }
 
     public static class MenuHelperExtensions
     {
-        public static string AdjustDateInputFormat(this string input, DateChangeOptionEnum dateChangeOption)
+        public static string AdjustDateInputFormat(this string input, DatePartEnum dateChangeOption)
         {
-            if (DateChangeOptionEnum.Year == dateChangeOption)
+            if (DatePartEnum.Year == dateChangeOption)
             {
                 while (input.Length < 4)
                 {

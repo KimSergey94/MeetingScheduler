@@ -57,5 +57,21 @@ namespace MeetingScheduler.Services
         {
             return meetings.Where(x => x.StartDate.Date == meetingsDate.Date).ToList();
         }
+        public static Meeting GetMeetingById(int meetingId)
+        {
+            return meetings.FirstOrDefault(x => x.Id == meetingId);
+        }
+        public static bool DoesMeetingFitSchedule(Meeting meeting)
+        {
+            return !meetings.Any(x =>
+                               (x.StartDate < meeting.StartDate && meeting.StartDate < x.EndDate)
+                               ||
+                               (x.StartDate < meeting.EndDate && meeting.EndDate <= x.EndDate)
+                               ||
+                               (meeting.StartDate < x.StartDate && x.StartDate < meeting.EndDate)
+                               ||
+                               (meeting.StartDate < x.EndDate && x.EndDate <= meeting.EndDate)
+                               );
+        }
     }
 }

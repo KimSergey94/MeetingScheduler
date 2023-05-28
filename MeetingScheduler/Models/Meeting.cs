@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MeetingScheduler.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,6 +22,14 @@ namespace MeetingScheduler.Models
             StartDate = startDate;
             EndDate = endDate;
             ReminderMinutes = reminderMinutes;
+        }
+        public bool IsCorrect()
+        {
+            return StartDate < EndDate;
+        }
+        public bool DoesFitSchedule()
+        {
+            return MeetingManager.DoesMeetingFitSchedule(this);
         }
     }
 }
