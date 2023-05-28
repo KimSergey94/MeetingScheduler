@@ -93,6 +93,8 @@ namespace MeetingScheduler.Helpers
                 AskIfChangesNeeded();
             }
         }
+
+        #region Edit meeting
         private static void StartMeetingEditing(int meetingNumber)
         {
             var meeting = MeetingManager.GetMeetingById(meetingNumber);
@@ -150,7 +152,7 @@ namespace MeetingScheduler.Helpers
             {
                 var reminderMinutes = int.Parse(input);
 
-                if(meeting.StartDate.AddMinutes(Math.Abs(reminderMinutes)) >= DateTime.Now.AddMinutes(1))
+                if(meeting.StartDate.AddMinutes(-1 * reminderMinutes) >= DateTime.Now.AddMinutes(1))
                 {
                     meeting.ReminderMinutes = reminderMinutes;
                     ShowMessage("Дата напоминания успешно отредактирована.");
@@ -226,6 +228,7 @@ namespace MeetingScheduler.Helpers
             //    ShowMessageAndAskToExitOrMainMenu($"Произошла непредвиденная ошибка. Не удалось отредактирова встречу под номером {meeting.Id}.");
             //}
         }
+        #endregion
         private static void PrintMeetingDetails(Meeting meeting)
         {
             Console.WriteLine(meeting.ToString());
@@ -251,17 +254,42 @@ namespace MeetingScheduler.Helpers
         }
         private static void StartMeetingCreation(DateTime startDate)
         {
-            startDate = InitMeetingDateAndTime(startDate);
+            startDate = InitMeetingStartTime(startDate);
+            if (startDate < DateTime.Now.AddMinutes(10))
+            {
+                ShowMessage("Дата и время начала встречи должна быть позже текущего времени системы минимум на 10 минут.");
+                StartMeetingCreation(startDate);
+                return;
+            }
+
             var endDate = InitMeetingEndDateAndTime();
             var newMeeting = new Meeting("temp", startDate, endDate, 0);
             if (MeetingManager.DoesMeetingFitSchedule(newMeeting))
             {
-                var name = AskMeetingName();
-                var reminderMinutes = AskToSetReminder();
-                newMeeting.ReminderMinutes = reminderMinutes;
-                newMeeting.Name = name;
-                MeetingManager.AddMeeting(newMeeting);
-                ShowMessageAndAskToExitOrMainMenu("Встреча успешно создана.");
+                if (newMeeting.IsCorrect())
+                {
+                    var name = AskMeetingName();
+                    newMeeting.Name = name;
+
+                    while (true)
+                    {
+                        var reminderMinutes = AskToSetReminder();
+                        if (newMeeting.StartDate.AddMinutes(-1 * reminderMinutes) >= DateTime.Now.AddMinutes(1))
+                        {
+                            newMeeting.ReminderMinutes = reminderMinutes;
+                            break;
+                        }
+                        else ShowMessage("Дата напоминания должна быть позже текущего времени системы минимум на одну минуту.");
+                    }
+
+                    MeetingManager.AddMeeting(newMeeting);
+                    ShowMessageAndAskToExitOrMainMenu("Встреча успешно создана.");
+                }
+                else
+                {
+                    ShowMessage($"Произошла ошибка. Дата начала встречи должна быть меньше примерной даты окончания встречи. Попробуйте еще раз.");
+                    StartMeetingCreation(startDate);
+                }
             }
             else
             {
@@ -304,7 +332,7 @@ namespace MeetingScheduler.Helpers
             }
             return DateTime.Now;
         }
-        private static DateTime InitMeetingDateAndTime(DateTime startDate)
+        private static DateTime InitMeetingStartTime(DateTime startDate)
         {
             Console.WriteLine("Пожалуйста введите планируемое время встречи. Формат: 13:12");
             var startTimeString = GetUserInput();
@@ -316,7 +344,7 @@ namespace MeetingScheduler.Helpers
             {
                 Console.WriteLine("Неправильный формат времени.");
                 Console.WriteLine();
-                InitMeetingDateAndTime(startDate);
+                startDate = InitMeetingStartTime(startDate);
             }
             return startDate;
         }
