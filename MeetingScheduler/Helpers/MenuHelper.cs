@@ -42,6 +42,7 @@ namespace MeetingScheduler.Helpers
             else if (input == "2") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.DayOfMonth));
             else if (input == "3") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.Month));
             else if (input == "4") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.Year));
+            else if (input == "5") PrintMainMenu();
         }
         public static DateTime ChangeSchedulerDate(DateTime date, DateChangeOptionEnum dateChangeOption)
         {
@@ -82,6 +83,7 @@ namespace MeetingScheduler.Helpers
             Console.WriteLine("[2] Изменить день даты");
             Console.WriteLine("[3] Изменить месяц даты");
             Console.WriteLine("[4] Изменить год даты");
+            Console.WriteLine("[5] Вернуться в главное меню");
         }
         private static void PrintMainMenuOptions()
         {
