@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MeetingScheduler.Models;
+using MeetingScheduler.Services;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -14,21 +16,23 @@ namespace MeetingScheduler.Helpers
             PrintGreeting();
             PrintMainMenu();
         }
-        public static void PrintGreeting()
+        private static void PrintGreeting()
         {
-            Console.WriteLine("Добро пожаловать.");
+            Console.WriteLine("Добро пожаловать в персональный планировщик встреч.");
         }
-        public static void PrintMainMenu()
+        private static void PrintMainMenu()
         {
             PrintMainMenuOptions();
-            var input = Console.ReadLine().Trim();
+            var input = GetUserInput();
             Console.WriteLine();
-          
+
             if (input == "1")
                 PrintSchedulerMenu(DateTime.Now);
-            else if(input == "2")
+            else if (input == "2")
             {
             }
+            else if (input == "3")
+                Environment.Exit(0);
             else
             {
                 Console.WriteLine($"Произошла ошибка. Опция '{input}' не валидна.");
@@ -37,23 +41,124 @@ namespace MeetingScheduler.Helpers
                 PrintMainMenu();
             }
         }
-        public static void PrintSchedulerMenu(DateTime date)
+        private static void PrintSchedulerMenu(DateTime date)
         {
             PrintSchedulerMenuOptions(date);
-            var input = Console.ReadLine().Trim();
+            var input = GetUserInput();
             Console.WriteLine();
 
-            if (input == "1") Console.WriteLine("asd");
+            if (input == "1") StartMeetingCreation(date);
             else if (input == "2") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.DayOfMonth));
             else if (input == "3") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.Month));
             else if (input == "4") PrintSchedulerMenu(ChangeSchedulerDate(date, DateChangeOptionEnum.Year));
             else if (input == "5") PrintMainMenu();
+            else
+            {
+                Console.WriteLine($"Произошла ошибка. Опция '{input}' не валидна.");
+                Console.ReadKey();
+                Console.WriteLine();
+                PrintSchedulerMenu(date);
+            }
         }
-        public static DateTime ChangeSchedulerDate(DateTime date, DateChangeOptionEnum dateChangeOption)
+        private static void StartMeetingCreation(DateTime startDate)
+        {
+            var name = AskMeetingName();
+            startDate = InitMeetingDateAndTime(startDate);
+            var endDate = InitMeetingEndDateAndTime();
+            var reminderMinutes = AskToSetReminder();
+            if (reminderMinutes > 0) Console.WriteLine("Reminder is created succsueussuffultlltlyy");
+
+            var newMeeting = new Meeting(name, startDate, endDate, reminderMinutes);
+            MeetingManager.AddMeeting(newMeeting);
+            Console.WriteLine("Встреча успешно создана.");
+            Console.ReadKey();
+            Console.WriteLine();
+
+            AskToExitOrMainMenu();
+        }
+        private static void AskToExitOrMainMenu()
+        {
+            Console.WriteLine("Пожалуйста выберите нужную опцию:");
+            Console.WriteLine("[1] Вернуться в главное меню");
+            Console.WriteLine("[2] Выход");
+            var input = GetUserInput();
+            Console.WriteLine();
+
+            if (input == "1") PrintMainMenu();
+            else if (input == "2") Environment.Exit(0);
+            else
+            {
+                Console.WriteLine($"Произошла ошибка. Опция '{input}' не валидна.");
+                Console.ReadKey();
+                Console.WriteLine();
+                AskToExitOrMainMenu();
+            }
+        }
+        private static int AskToSetReminder()
+        {
+            var result = 0;
+            Console.WriteLine("Пожалуйста введите за сколько минут до встречи вам отправить напоминание. Введите 0 если напоминание не нужно.");
+            var input = GetUserInput();
+            if (input == "0") return result;
+            try
+            {
+                result = int.Parse(input);
+            }
+            catch
+            {
+                Console.WriteLine("Неправильный формат даты.");
+                Console.WriteLine();
+                result = AskToSetReminder();
+            }
+            return result;
+        }
+        private static DateTime InitMeetingEndDateAndTime()
+        {
+            Console.WriteLine("Пожалуйста введите примерное время окончания встречи. Формат: 27.05.2023 13:12");
+            var endDateTimeString = GetUserInput();
+            try
+            {
+                var endDateTtime = endDateTimeString.TryParseToDateTime();
+                return endDateTtime;
+            }
+            catch
+            {
+                Console.WriteLine("Неправильный формат даты.");
+                Console.WriteLine();
+                InitMeetingEndDateAndTime();
+            }
+            return DateTime.Now;
+        }
+        private static DateTime InitMeetingDateAndTime(DateTime startDate)
+        {
+            Console.WriteLine("Пожалуйста введите планируемое время встречи. Формат: 13:12");
+            var startTimeString = GetUserInput();
+            try
+            {
+                startDate = startDate.AddTimeToDate(startTimeString);
+            }
+            catch
+            {
+                Console.WriteLine("Неправильный формат времени.");
+                Console.WriteLine();
+                InitMeetingDateAndTime(startDate);
+            }
+            return startDate;
+        }
+        private static string AskMeetingName()
+        {
+            Console.WriteLine("Пожалуйста введите название встречи:");
+            return GetUserInput();
+        }
+        public static string GetUserInput()
+        {
+            var input = Console.ReadLine();
+            return input.TrimConsoleInput();
+        }
+        private static DateTime ChangeSchedulerDate(DateTime date, DateChangeOptionEnum dateChangeOption)
         {
             Console.WriteLine("Пожалуйста введите нужное значение:");
-            var input = Console.ReadLine().Trim();
-            input = input.AdjustDateInputFormat(dateChangeOption);
+            var input = GetUserInput().AdjustDateInputFormat(dateChangeOption);
           
             try
             {
@@ -68,9 +173,7 @@ namespace MeetingScheduler.Helpers
                     dateArray[2] = input;
 
                 dateString = string.Join('.', dateArray);
-
-                CultureInfo provider = CultureInfo.InvariantCulture;
-                date = DateTime.ParseExact(dateString, "dd.MM.yyyy", provider);
+                date = dateString.TryParseToDate();
                 Console.WriteLine();
                 return date;
             }
@@ -95,6 +198,7 @@ namespace MeetingScheduler.Helpers
             Console.WriteLine("Пожалуйста выберите нужную опцию:");
             Console.WriteLine("[1] Запланировать встречу");
             Console.WriteLine("[2] Просмотр запланированных встреч на определенный день");
+            Console.WriteLine("[3] Выход");
         }
     }
 
@@ -119,6 +223,26 @@ namespace MeetingScheduler.Helpers
                 input = input.Insert(0, "0");
             }
             return input;
+        }
+        public static string TrimConsoleInput(this string? input)
+        {
+            return input != null ? input.Trim() : "";
+        }
+        public static DateTime TryParseToDate(this string dateString) 
+        {
+            CultureInfo provider = CultureInfo.InvariantCulture;
+            return DateTime.ParseExact(dateString, "dd.MM.yyyy", provider);
+        }
+        public static DateTime AddTimeToDate(this DateTime date, string time)
+        {
+            var dateString = date.ToString("dd.MM.yyyy") + $" {time}";
+            CultureInfo provider = CultureInfo.InvariantCulture;
+            return DateTime.ParseExact(dateString, "dd.MM.yyyy H:mm", provider);
+        }
+        public static DateTime TryParseToDateTime(this string dateTime)
+        {
+            CultureInfo provider = CultureInfo.InvariantCulture;
+            return DateTime.ParseExact(dateTime, "dd.MM.yyyy H:mm", provider);
         }
     }
 }
