@@ -11,6 +11,7 @@ namespace MeetingScheduler.Helpers
 {
     internal static class MenuHelper
     {
+        #region Main menu
         public static void StartMenu()
         {
             PrintGreeting();
@@ -34,6 +35,16 @@ namespace MeetingScheduler.Helpers
                 PrintMainMenu();
             }
         }
+        private static void PrintMainMenuOptions()
+        {
+            Console.WriteLine("Пожалуйста выберите нужную опцию:");
+            Console.WriteLine("[1] Запланировать встречу");
+            Console.WriteLine("[2] Просмотр запланированных встреч на определенный день");
+            Console.WriteLine("[3] Выход");
+        }
+        #endregion
+
+        #region Show meetings
         private static void ShowParticularDayMeetings()
         {
             Console.WriteLine("Пожалуйста введите день за который хотите посмотреть встречи. Формат: 27.05.2023");
@@ -219,6 +230,9 @@ namespace MeetingScheduler.Helpers
         {
             Console.WriteLine(meeting.ToString());
         }
+        #endregion
+
+        #region Scheduling meeting
         private static void PrintSchedulerMenu(DateTime date)
         {
             PrintSchedulerMenuOptions(date);
@@ -254,34 +268,6 @@ namespace MeetingScheduler.Helpers
                 ShowMessage($"Произошла ошибка. Время встречи пересекается с другой/другими встречами. Попробуйте еще раз.");
                 StartMeetingCreation(startDate);
             }
-        }
-        private static void AskToExitOrMainMenu()
-        {
-            Console.WriteLine("Пожалуйста выберите нужную опцию:");
-            Console.WriteLine("[1] Вернуться в главное меню");
-            Console.WriteLine("[2] Выход");
-            var input = GetUserInput();
-            
-
-            if (input == "1") PrintMainMenu();
-            else if (input == "2") Environment.Exit(0);
-            else
-            {
-                ShowMessageAndAskToExitOrMainMenu($"Произошла ошибка. Опция '{input}' не валидна.");
-            }
-        }
-        private static void ShowMessageAndAskToExitOrMainMenu(string message)
-        {
-            Console.WriteLine(message);
-            Console.ReadKey();
-            Console.WriteLine();
-            AskToExitOrMainMenu();
-        }
-        private static void ShowMessage(string message)
-        {
-            Console.WriteLine(message);
-            Console.ReadKey();
-            Console.WriteLine();
         }
         private static int AskToSetReminder()
         {
@@ -339,12 +325,6 @@ namespace MeetingScheduler.Helpers
             Console.WriteLine("Пожалуйста введите название встречи:");
             return GetUserInput();
         }
-        public static string GetUserInput()
-        {
-            var input = Console.ReadLine();
-            Console.WriteLine();
-            return input.TrimConsoleInput();
-        }
         private static DateTime ChangeSchedulerDate(DateTime date, DatePartEnum dateChangeOption)
         {
             Console.WriteLine("Пожалуйста введите нужное значение:");
@@ -383,13 +363,44 @@ namespace MeetingScheduler.Helpers
             Console.WriteLine("[4] Изменить год даты");
             Console.WriteLine("[5] Вернуться в главное меню");
         }
-        private static void PrintMainMenuOptions()
+        #endregion
+
+        #region Common
+        public static string GetUserInput()
+        {
+            var input = Console.ReadLine();
+            Console.WriteLine();
+            return input.TrimConsoleInput();
+        }
+        private static void ShowMessage(string message)
+        {
+            Console.WriteLine(message);
+            Console.ReadKey();
+            Console.WriteLine();
+        }
+        private static void ShowMessageAndAskToExitOrMainMenu(string message)
+        {
+            Console.WriteLine(message);
+            Console.ReadKey();
+            Console.WriteLine();
+            AskToExitOrMainMenu();
+        }
+        private static void AskToExitOrMainMenu()
         {
             Console.WriteLine("Пожалуйста выберите нужную опцию:");
-            Console.WriteLine("[1] Запланировать встречу");
-            Console.WriteLine("[2] Просмотр запланированных встреч на определенный день");
-            Console.WriteLine("[3] Выход");
+            Console.WriteLine("[1] Вернуться в главное меню");
+            Console.WriteLine("[2] Выход");
+            var input = GetUserInput();
+
+
+            if (input == "1") PrintMainMenu();
+            else if (input == "2") Environment.Exit(0);
+            else
+            {
+                ShowMessageAndAskToExitOrMainMenu($"Произошла ошибка. Опция '{input}' не валидна.");
+            }
         }
+        #endregion
     }
 
     public enum DatePartEnum
