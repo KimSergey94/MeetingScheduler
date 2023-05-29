@@ -48,7 +48,7 @@ namespace MeetingScheduler.Models
                 $"Дата начала: {StartDate.ParseToString()}\n" +
                 $"Примерная дата окончания: {EndDate.ParseToString()}\n";
             if (ReminderMinutes > 0) result += $"Напоминание за {ReminderMinutes} минут\n";
-            result += "*********************************************\n";
+            result += "*********************************************\n\n";
             return result;
         }
     }
