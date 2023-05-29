@@ -51,13 +51,14 @@ namespace MeetingScheduler.Helpers
             var meetingsDateString = GetUserInput();
             try
             {
+                meetingsDateString = meetingsDateString.AdjustDateInputFormat();
                 var meetingsDateTime = meetingsDateString.TryParseToDate();
                 var filteredMeetings = MeetingManager.GetMeetingsByDate(meetingsDateTime);
                 filteredMeetings.ForEach(meeting => {
                     PrintMeetingDetails(meeting);
                 });
                 Console.WriteLine();
-                AskIfChangesNeeded();
+                AskIfChangesNeeded(filteredMeetings);
             }
             catch
             {
@@ -65,11 +66,28 @@ namespace MeetingScheduler.Helpers
                 ShowParticularDayMeetings();
             }
         }
-        private static void AskIfChangesNeeded()
+        private static void AskIfChangesNeeded(List<Meeting> meetings)
         {
             Console.WriteLine("Введите номер встречи если требуется внести изменения или удалить встречу. Введите 0 чтобы вернуться в главное меню.");
+            Console.WriteLine("Для экспорта расписания встреч в текстовый файл введите 'file'.");
             var input = GetUserInput();
             if (input == "0") PrintMainMenu();
+            else if(input == "file")
+            {
+                try
+                {
+                    MeetingManager.ExportAsTextFile(meetings);
+                    ShowMessage("Файл schedule.txt успешно экспортирован.");
+                    PrintMainMenu();
+                    return;
+                }
+                catch
+                {
+                    ShowMessage($"Произошла ошибка. Не удалось экспортировать файл.");
+                    AskIfChangesNeeded(meetings);
+                }
+            }
+
             try
             {
                 var meetingNumber = int.Parse(input);
@@ -82,7 +100,7 @@ namespace MeetingScheduler.Helpers
                     catch
                     {
                         ShowMessage($"Произошла ошибка. Не удалось редактировать встречу с номером '{meetingNumber}'. Проверьте правильность данных.");
-                        AskIfChangesNeeded();
+                        AskIfChangesNeeded(meetings);
                     }
                 }
                 else PrintMainMenu();
@@ -90,7 +108,7 @@ namespace MeetingScheduler.Helpers
             catch 
             {
                 ShowMessage($"Произошла ошибка. Опция '{input}' не валидна.");
-                AskIfChangesNeeded();
+                AskIfChangesNeeded(meetings);
             }
         }
 
@@ -116,16 +134,23 @@ namespace MeetingScheduler.Helpers
             else if (input == "2")
             {
                 var meetingCopy = meeting.CreateDeepCopy();
-                HandleMeetingDateChange(meeting, MeetingDateChangeOptionEnum.StartDate);
-                HandleMeetingDateChange(meeting, MeetingDateChangeOptionEnum.EndDate);
-                if (MeetingManager.DoesMeetingFitSchedule(meeting))
+                HandleMeetingDateChange(meetingCopy, MeetingDateChangeOptionEnum.StartDate);
+                HandleMeetingDateChange(meetingCopy, MeetingDateChangeOptionEnum.EndDate);
+                if (MeetingManager.DoesMeetingFitSchedule(meetingCopy))
                 {
-                    ShowMessage($"Время встречи не пересекается с другими встречами и было успешно сохранено.");
-                    ShowMeetingEditingOptions(meeting);
+                    if (MeetingManager.EditMeeting(meetingCopy) > 0)
+                    {
+                        ShowMessage($"Встреча не пересекается с другими встречами и была успешно сохранена.");
+                        ShowMeetingEditingOptions(meeting);
+                    }
+                    else
+                    {
+                        ShowMessage($"Произошла ошибка при редактировании встречи. Попробуйте еще раз.");
+                        ShowMeetingEditingOptions(meeting);
+                    }
                 }
                 else
                 {
-                    meeting = meetingCopy;
                     ShowMessage($"Произошла ошибка. Время встречи пересекается с другой/другими встречами. Произведен откат изменений дат начала и окончания встречи. Попробуйте еще раз.");
                     ShowMeetingEditingOptions(meeting);
                 }
@@ -175,10 +200,12 @@ namespace MeetingScheduler.Helpers
         {
             var meetingChangeDateTitle = meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate ? "дату начала" : meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.EndDate ? "примерную дату окончания" : "";
             Console.WriteLine($"Пожалуйста введите новую {meetingChangeDateTitle} встречи. Формат: 27.05.2023 13:12");
-            var dateString = GetUserInput();
+            var fullDateString = GetUserInput();
             try
             {
-                var dateTime = dateString.TryParseToDateTime();
+                fullDateString = fullDateString.AdjustFullDateInputFormat();
+                var dateTime = fullDateString.TryParseToDateTime();
+
                 if(meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate)
                 {
                     if(dateTime >= DateTime.Now.AddMinutes(10)) meeting.StartDate = dateTime;
@@ -199,6 +226,7 @@ namespace MeetingScheduler.Helpers
                         return;
                     }
                 }
+
                 var messageChangeDateTitle = "";
                 if (meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate) messageChangeDateTitle = "Дата начала";
                 else if(meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.EndDate) messageChangeDateTitle = "Примерная дата окончания";
@@ -321,6 +349,7 @@ namespace MeetingScheduler.Helpers
             var endDateTimeString = GetUserInput();
             try
             {
+                endDateTimeString = endDateTimeString.AdjustFullDateInputFormat();
                 var endDateTime = endDateTimeString.TryParseToDateTime();
                 return endDateTime;
             }
@@ -334,10 +363,11 @@ namespace MeetingScheduler.Helpers
         }
         private static DateTime InitMeetingStartTime(DateTime startDate)
         {
-            Console.WriteLine("Пожалуйста введите планируемое время встречи. Формат: 13:12");
+            Console.WriteLine("Пожалуйста введите планируемое время начала встречи. Формат: 13:12");
             var startTimeString = GetUserInput();
             try
             {
+                startTimeString = startTimeString.AdjustTimeInputFormat();
                 startDate = startDate.AddTimeToDate(startTimeString);
             }
             catch
@@ -360,18 +390,7 @@ namespace MeetingScheduler.Helpers
           
             try
             {
-                var dateString = date.ToString("dd.MM.yyyy");
-                var dateArray = dateString.Split('.');
-
-                if (dateChangeOption == DatePartEnum.DayOfMonth)
-                    dateArray[0] = input;
-                else if (dateChangeOption == DatePartEnum.Month)
-                    dateArray[1] = input;
-                else if (dateChangeOption == DatePartEnum.Year)
-                    dateArray[2] = input;
-
-                dateString = string.Join('.', dateArray);
-                date = dateString.TryParseToDate();
+                date = date.ChangeDatePartByInput(input, dateChangeOption);
                 Console.WriteLine();
                 return date;
             }
@@ -438,48 +457,5 @@ namespace MeetingScheduler.Helpers
     public enum MeetingDateChangeOptionEnum
     {
         StartDate = 0, EndDate = 1,
-    }
-
-    public static class MenuHelperExtensions
-    {
-        public static string AdjustDateInputFormat(this string input, DatePartEnum dateChangeOption)
-        {
-            if (DatePartEnum.Year == dateChangeOption)
-            {
-                while (input.Length < 4)
-                {
-                    input = input.Insert(0, "0");
-                }
-            }
-            else if (input.Length < 2)
-            {
-                input = input.Insert(0, "0");
-            }
-            return input;
-        }
-        public static string TrimConsoleInput(this string? input)
-        {
-            return input != null ? input.Trim() : "";
-        }
-        public static DateTime TryParseToDate(this string dateString) 
-        {
-            CultureInfo provider = CultureInfo.InvariantCulture;
-            return DateTime.ParseExact(dateString, "dd.MM.yyyy", provider);
-        }
-        public static DateTime AddTimeToDate(this DateTime date, string time)
-        {
-            var dateString = date.ToString("dd.MM.yyyy") + $" {time}";
-            CultureInfo provider = CultureInfo.InvariantCulture;
-            return DateTime.ParseExact(dateString, "dd.MM.yyyy H:mm", provider);
-        }
-        public static DateTime TryParseToDateTime(this string dateTime)
-        {
-            CultureInfo provider = CultureInfo.InvariantCulture;
-            return DateTime.ParseExact(dateTime, "dd.MM.yyyy H:mm", provider);
-        }
-        public static string ParseToString(this DateTime dateTime)
-        {
-            return dateTime.ToString("dd.MM.yyyy H:mm");
-        }
     }
 }

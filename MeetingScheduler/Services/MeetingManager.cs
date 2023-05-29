@@ -61,6 +61,7 @@ namespace MeetingScheduler.Services
         {
             return meetings.FirstOrDefault(x => x.Id == meetingId);
         }
+
         public static bool DoesMeetingFitSchedule(Meeting meeting)
         {
             return !meetings.Any(x =>
@@ -72,6 +73,15 @@ namespace MeetingScheduler.Services
                                ||
                                (meeting.StartDate < x.EndDate && x.EndDate <= meeting.EndDate)
                                );
+        }
+        public static void ExportAsTextFile(List<Meeting> meetings)
+        {
+            var content = "";
+            meetings.ForEach(x =>
+            {
+                content += x.ToString();
+            });
+            FileExporter.SaveToFile(content);
         }
     }
 }
