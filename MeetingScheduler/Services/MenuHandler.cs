@@ -135,7 +135,7 @@ namespace MeetingScheduler.Services
                 var meetingCopy = meeting.CreateDeepCopy();
                 HandleMeetingDateChange(meetingCopy, MeetingDateChangeOptionEnum.StartDate);
                 HandleMeetingDateChange(meetingCopy, MeetingDateChangeOptionEnum.EndDate);
-                if (MeetingManager.DoesMeetingFitSchedule(meetingCopy))
+                if (meetingCopy.DoesFitSchedule())
                 {
                     if (MeetingManager.EditMeeting(meetingCopy) > 0)
                     {
@@ -301,7 +301,7 @@ namespace MeetingScheduler.Services
 
             var endDate = InitMeetingEndDateAndTime();
             var newMeeting = new Meeting("temp", startDate, endDate, 0);
-            if (MeetingManager.DoesMeetingFitSchedule(newMeeting))
+            if (newMeeting.DoesFitSchedule())
             {
                 if (newMeeting.IsCorrect())
                 {
