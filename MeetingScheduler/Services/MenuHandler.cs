@@ -76,7 +76,7 @@ namespace MeetingScheduler.Services
                 try
                 {
                     MeetingManager.ExportAsTextFile(meetings);
-                    ShowMessage("Файл schedule.txt успешно экспортирован.");
+                    ShowMessage("Расписание встреч успешно экспортировано в файл schedule.txt.");
                     PrintMainMenu();
                     return;
                 }
