@@ -139,7 +139,7 @@ namespace MeetingScheduler.Services
                 {
                     if (MeetingManager.EditMeeting(meetingCopy) > 0)
                     {
-                        ShowMessage($"Встреча не пересекается с другими встречами и была успешно сохранена.");
+                        ShowMessage($"Встреча не пересекается с другими встречами и была успешно сохранена. Внимание: напоминание сбрасывается при редактировании даты.");
                         ShowMeetingEditingOptions(meeting);
                     }
                     else
@@ -157,7 +157,11 @@ namespace MeetingScheduler.Services
             else if (input == "3") HandleMeetingReminderChange(meeting);
             else if (input == "4")
             {
-                if (MeetingManager.RemoveMeeting(meeting) > 0) ShowMessageAndAskToExitOrMainMenu("Встреча успешно удалена.");
+                if (MeetingManager.RemoveMeeting(meeting) > 0)
+                {
+                    MeetingReminder.StopAndDeleteMeetingReminder(meeting);
+                    ShowMessageAndAskToExitOrMainMenu("Встреча успешно удалена.");
+                }
                 else ShowMessageAndAskToExitOrMainMenu($"Произошла ошибка. Не удалось удалить встречу с номером {meeting.Id}. Проверьте правильность данных.");
             }
             else if (input == "5") PrintMainMenu();
@@ -179,6 +183,7 @@ namespace MeetingScheduler.Services
                 if (meeting.StartDate.AddMinutes(-1 * reminderMinutes) >= DateTime.Now.AddMinutes(1))
                 {
                     meeting.ReminderMinutes = reminderMinutes;
+                    MeetingReminder.AddAndStartMeetingReminder(meeting);
                     ShowMessage("Дата напоминания успешно отредактирована.");
                     ShowMeetingEditingOptions(meeting);
                 }
@@ -207,7 +212,12 @@ namespace MeetingScheduler.Services
 
                 if (meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate)
                 {
-                    if (dateTime >= DateTime.Now.AddMinutes(10)) meeting.StartDate = dateTime;
+                    if (dateTime >= DateTime.Now.AddMinutes(10))
+                    {
+                        meeting.StartDate = dateTime;
+                        meeting.ReminderMinutes = 0;
+                        MeetingReminder.StopAndDeleteMeetingReminder(meeting);
+                    }
                     else
                     {
                         ShowMessage("Дата начала встречи должна быть позже текущего времени системы минимум на 10 минут.");

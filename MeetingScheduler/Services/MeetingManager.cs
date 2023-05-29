@@ -9,13 +9,15 @@ namespace MeetingScheduler.Services
 {
     internal static class MeetingManager
     {
-        private static List<Meeting> meetings { get; set; } = new List<Meeting>();
         private static int indexCounter = 0;
+        private static List<Meeting> Meetings { get; set; } = new List<Meeting>();
 
         public static void AddMeeting(Meeting meeting) 
         { 
             meeting.Id = ++indexCounter; 
-            meetings.Add(meeting);
+            Meetings.Add(meeting);
+            
+            if(meeting.ReminderMinutes > 0) MeetingReminder.AddAndStartMeetingReminder(meeting);
         }
 
         /// <returns>
@@ -27,7 +29,7 @@ namespace MeetingScheduler.Services
             var result = 0;
             try
             {
-                meetings.Remove(meeting);
+                Meetings.Remove(meeting);
                 result++;
             }
             catch { }
@@ -41,7 +43,7 @@ namespace MeetingScheduler.Services
         public static int EditMeeting(Meeting meeting) 
         { 
             var result = 0;
-            var originalMeetingObj = meetings.FirstOrDefault(x => x.Id == meeting.Id);
+            var originalMeetingObj = Meetings.FirstOrDefault(x => x.Id == meeting.Id);
             if (originalMeetingObj != null)
             {
                 originalMeetingObj.ReminderMinutes = meeting.ReminderMinutes;
@@ -49,22 +51,24 @@ namespace MeetingScheduler.Services
                 originalMeetingObj.StartDate = meeting.StartDate;
                 originalMeetingObj.EndDate = meeting.EndDate;
                 result = 1;
+
+                if (originalMeetingObj.ReminderMinutes > 0) MeetingReminder.AddAndStartMeetingReminder(originalMeetingObj);
             }
             return result;
         }
 
         public static List<Meeting> GetMeetingsByDate(DateTime meetingsDate)
         {
-            return meetings.Where(x => x.StartDate.Date == meetingsDate.Date).ToList();
+            return Meetings.Where(x => x.StartDate.Date == meetingsDate.Date).ToList();
         }
         public static Meeting GetMeetingById(int meetingId)
         {
-            return meetings.FirstOrDefault(x => x.Id == meetingId);
+            return Meetings.FirstOrDefault(x => x.Id == meetingId);
         }
 
         public static bool DoesMeetingFitSchedule(Meeting meeting)
         {
-            return !meetings.Any(x =>
+            return !Meetings.Any(x =>
                                (x.StartDate < meeting.StartDate && meeting.StartDate < x.EndDate)
                                ||
                                (x.StartDate < meeting.EndDate && meeting.EndDate <= x.EndDate)
