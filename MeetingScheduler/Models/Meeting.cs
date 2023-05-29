@@ -52,4 +52,9 @@ namespace MeetingScheduler.Models
             return result;
         }
     }
+
+    internal enum MeetingDateChangeOptionEnum
+    {
+        StartDate = 0, EndDate = 1,
+    }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MeetingScheduler.Models;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MeetingScheduler.Helpers
 {
-    public static class MenuHelperExtensions
+    public static class MenuHandlerExtensions
     {
         public static string AdjustFullDateInputFormat(this string fullDateString)
         {
@@ -21,21 +22,21 @@ namespace MeetingScheduler.Helpers
         public static string AdjustTimeInputFormat(this string timeString)
         {
             var dateStringArray = timeString.Split(':');
-            dateStringArray[0] = dateStringArray[0].AdjustDateInputFormat(DatePartEnum.DayOfMonth);
-            dateStringArray[1] = dateStringArray[1].AdjustDateInputFormat(DatePartEnum.Month);
+            dateStringArray[0] = dateStringArray[0].AdjustDateInputFormat(StringDatePartEnum.DayOfMonth);
+            dateStringArray[1] = dateStringArray[1].AdjustDateInputFormat(StringDatePartEnum.Month);
             return string.Join(':', dateStringArray);
         }
         public static string AdjustDateInputFormat(this string timeString)
         {
             var timeStringArray = timeString.Split('.');
-            timeStringArray[0] = timeStringArray[0].AdjustDateInputFormat(DatePartEnum.DayOfMonth);
-            timeStringArray[1] = timeStringArray[1].AdjustDateInputFormat(DatePartEnum.Month);
-            timeStringArray[2] = timeStringArray[2].AdjustDateInputFormat(DatePartEnum.Year);
+            timeStringArray[0] = timeStringArray[0].AdjustDateInputFormat(StringDatePartEnum.DayOfMonth);
+            timeStringArray[1] = timeStringArray[1].AdjustDateInputFormat(StringDatePartEnum.Month);
+            timeStringArray[2] = timeStringArray[2].AdjustDateInputFormat(StringDatePartEnum.Year);
             return string.Join('.', timeStringArray);
         }
-        public static string AdjustDateInputFormat(this string input, DatePartEnum dateChangeOption)
+        public static string AdjustDateInputFormat(this string input, StringDatePartEnum dateChangeOption)
         {
-            if (DatePartEnum.Year == dateChangeOption)
+            if (StringDatePartEnum.Year == dateChangeOption)
             {
                 while (input.Length < 4)
                 {
@@ -72,16 +73,16 @@ namespace MeetingScheduler.Helpers
         {
             return dateTime.ToString("dd.MM.yyyy H:mm");
         }
-        public static DateTime ChangeDatePartByInput(this DateTime date, string input, DatePartEnum dateChangeOption)
+        public static DateTime ChangeDatePartByInput(this DateTime date, string input, StringDatePartEnum dateChangeOption)
         {
             var dateString = date.ToString("dd.MM.yyyy");
             var dateArray = dateString.Split('.');
 
-            if (dateChangeOption == DatePartEnum.DayOfMonth)
+            if (dateChangeOption == StringDatePartEnum.DayOfMonth)
                 dateArray[0] = input;
-            else if (dateChangeOption == DatePartEnum.Month)
+            else if (dateChangeOption == StringDatePartEnum.Month)
                 dateArray[1] = input;
-            else if (dateChangeOption == DatePartEnum.Year)
+            else if (dateChangeOption == StringDatePartEnum.Year)
                 dateArray[2] = input;
 
             dateString = string.Join('.', dateArray);

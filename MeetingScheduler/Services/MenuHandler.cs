@@ -1,15 +1,14 @@
-﻿using MeetingScheduler.Models;
-using MeetingScheduler.Services;
+﻿using MeetingScheduler.Helpers;
+using MeetingScheduler.Models;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MeetingScheduler.Helpers
+namespace MeetingScheduler.Services
 {
-    internal static class MenuHelper
+    internal static class MenuHandler
     {
         #region Main menu
         public static void StartMenu()
@@ -72,7 +71,7 @@ namespace MeetingScheduler.Helpers
             Console.WriteLine("Для экспорта расписания встреч в текстовый файл введите 'file'.");
             var input = GetUserInput();
             if (input == "0") PrintMainMenu();
-            else if(input == "file")
+            else if (input == "file")
             {
                 try
                 {
@@ -105,7 +104,7 @@ namespace MeetingScheduler.Helpers
                 }
                 else PrintMainMenu();
             }
-            catch 
+            catch
             {
                 ShowMessage($"Произошла ошибка. Опция '{input}' не валидна.");
                 AskIfChangesNeeded(meetings);
@@ -177,7 +176,7 @@ namespace MeetingScheduler.Helpers
             {
                 var reminderMinutes = int.Parse(input);
 
-                if(meeting.StartDate.AddMinutes(-1 * reminderMinutes) >= DateTime.Now.AddMinutes(1))
+                if (meeting.StartDate.AddMinutes(-1 * reminderMinutes) >= DateTime.Now.AddMinutes(1))
                 {
                     meeting.ReminderMinutes = reminderMinutes;
                     ShowMessage("Дата напоминания успешно отредактирована.");
@@ -188,12 +187,12 @@ namespace MeetingScheduler.Helpers
                     ShowMessage("Дата напоминания должна быть позже текущего времени системы минимум на одну минуту.");
                     HandleMeetingReminderChange(meeting);
                 }
-                
+
             }
             catch
             {
                 ShowMessage("Неправильный формат ввода.");
-                HandleMeetingReminderChange( meeting);
+                HandleMeetingReminderChange(meeting);
             }
         }
         private static void HandleMeetingDateChange(Meeting meeting, MeetingDateChangeOptionEnum meetingDateChangeOptionEnum)
@@ -206,9 +205,9 @@ namespace MeetingScheduler.Helpers
                 fullDateString = fullDateString.AdjustFullDateInputFormat();
                 var dateTime = fullDateString.TryParseToDateTime();
 
-                if(meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate)
+                if (meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate)
                 {
-                    if(dateTime >= DateTime.Now.AddMinutes(10)) meeting.StartDate = dateTime;
+                    if (dateTime >= DateTime.Now.AddMinutes(10)) meeting.StartDate = dateTime;
                     else
                     {
                         ShowMessage("Дата начала встречи должна быть позже текущего времени системы минимум на 10 минут.");
@@ -229,7 +228,7 @@ namespace MeetingScheduler.Helpers
 
                 var messageChangeDateTitle = "";
                 if (meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.StartDate) messageChangeDateTitle = "Дата начала";
-                else if(meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.EndDate) messageChangeDateTitle = "Примерная дата окончания";
+                else if (meetingDateChangeOptionEnum == MeetingDateChangeOptionEnum.EndDate) messageChangeDateTitle = "Примерная дата окончания";
                 ShowMessage($"{messageChangeDateTitle} встречи успешно отредактирована.");
             }
             catch
@@ -246,7 +245,7 @@ namespace MeetingScheduler.Helpers
 
             ShowMessage("Название встречи успешно отредактировано.");
             ShowMeetingEditingOptions(meeting);
-                
+
             //if (MeetingManager.EditMeeting(meeting) > 0)
             //{
             //    ShowMessageAndAskToExitOrMainMenu("Встреча успешно отредактирована.");
@@ -270,9 +269,9 @@ namespace MeetingScheduler.Helpers
             var input = GetUserInput();
 
             if (input == "1") StartMeetingCreation(date);
-            else if (input == "2") PrintSchedulerMenu(ChangeSchedulerDate(date, DatePartEnum.DayOfMonth));
-            else if (input == "3") PrintSchedulerMenu(ChangeSchedulerDate(date, DatePartEnum.Month));
-            else if (input == "4") PrintSchedulerMenu(ChangeSchedulerDate(date, DatePartEnum.Year));
+            else if (input == "2") PrintSchedulerMenu(ChangeSchedulerDate(date, StringDatePartEnum.DayOfMonth));
+            else if (input == "3") PrintSchedulerMenu(ChangeSchedulerDate(date, StringDatePartEnum.Month));
+            else if (input == "4") PrintSchedulerMenu(ChangeSchedulerDate(date, StringDatePartEnum.Year));
             else if (input == "5") PrintMainMenu();
             else
             {
@@ -383,18 +382,19 @@ namespace MeetingScheduler.Helpers
             Console.WriteLine("Пожалуйста введите название встречи:");
             return GetUserInput();
         }
-        private static DateTime ChangeSchedulerDate(DateTime date, DatePartEnum dateChangeOption)
+        private static DateTime ChangeSchedulerDate(DateTime date, StringDatePartEnum dateChangeOption)
         {
             Console.WriteLine("Пожалуйста введите нужное значение:");
             var input = GetUserInput().AdjustDateInputFormat(dateChangeOption);
-          
+
             try
             {
                 date = date.ChangeDatePartByInput(input, dateChangeOption);
                 Console.WriteLine();
                 return date;
             }
-            catch {
+            catch
+            {
                 Console.WriteLine("Произошла ошибка при редактировании даты.");
                 Console.WriteLine();
                 return date;
@@ -448,14 +448,5 @@ namespace MeetingScheduler.Helpers
             }
         }
         #endregion
-    }
-
-    public enum DatePartEnum
-    {
-        DayOfMonth = 0, Month = 1, Year = 2,
-    }
-    public enum MeetingDateChangeOptionEnum
-    {
-        StartDate = 0, EndDate = 1,
     }
 }

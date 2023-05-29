@@ -1,3 +1,3 @@
-using MeetingScheduler.Helpers;
+using MeetingScheduler.Services;
 
-MenuHelper.StartMenu();
+MenuHandler.StartMenu();
